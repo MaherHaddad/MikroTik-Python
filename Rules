@@ -1,0 +1,23 @@
+/ip firewall filter
+  add action=add-src-to-address-list address-list=Port-Scan address-list-timeout=1d chain=forward comment="Port scan on the Foward chain added for 1 day in the address list Port-Scan" protocol=tcp psd=21,3s,3,1
+  add action=drop chain=forward comment="Drop Port Scan address list for Forward Chain" src-address-list=Port-Scan
+  add action=add-src-to-address-list address-list=Port-Scan address-list-timeout=1d chain=input comment="Port scan on the Input chain added for 1 day in the address list Port-Scan" protocol=tcp psd=21,3s,3,1
+  add action=drop chain=input comment="Drop Port Scan address list for Input Chain" src-address-list=Port-Scan
+  add action=accept chain=forward comment="Allow on Forward chain good connection states" connection-state=established,related,new
+  add action=drop chain=forward comment="Drop on Forward chain Invalid connection state" connection-state=invalid
+  add action=jump chain=forward comment="ICMP traffic on Forward Chain are jumped to the ICMP Chain" jump-target=ICMP protocol=icmp
+  add action=jump chain=input comment="ICMP traffic on input Chain are jumped to the ICMP Chain" jump-target=ICMP protocol=icmp
+  add action=drop chain=ICMP comment="Drop Any ICMP more than 5 Packet per second with 8 Burst" limit=!5,8:packet protocol=icmp
+  add action=drop chain=ICMP comment="Drop Any ICMP Smurf Attack on the WAN interface" dst-address-type=broadcast in-interface=ether1 protocol=icmp
+  add action=accept chain=ICMP comment="Accept Echo Reply ICMP" icmp-options=0:0 protocol=icmp
+  add action=accept chain=ICMP comment="Accept Echo Request ICMP" icmp-options=8:0 protocol=icmp
+  add action=accept chain=ICMP comment="Accept Traceroute destination Unreachable ICMP" icmp-options=3:0 protocol=icmp
+  add action=accept chain=ICMP comment="Accept Traceroute destination Unreachable ICMP (3:3)" icmp-options=3:3 protocol=icmp
+  add action=accept chain=ICMP comment="Accept Time Exceed ICMP (11-0)" icmp-options=11:0 protocol=icmp
+  add action=accept chain=ICMP comment="Accept Path MTU Discover (3:4)" icmp-options=3:4 protocol=icmp
+  add action=return chain=ICMP comment="Return to the Firewall (leaving ICMP Chain)" icmp-options=0:0-255 protocol=icmp
+  add action=drop chain=forward comment="Drop any ICMP packet on Forward chain" protocol=icmp
+  add action=drop chain=input comment="Drop any ICMP packet on Input chain" protocol=icmp
+  add action=accept chain=input comment="Allow on Input chain good connection states" connection-state=established,related,new
+  add action=drop chain=input comment="Drop on Input chain Invalid connection state" connection-state=invalid
+  add action=drop chain=forward comment="Drop Bogons Address on the Forward chain via the WAN interface" in-interface=ether1 src-address-list=BOGONS
